@@ -1,0 +1,6 @@
+.DS_Store
+crash.log
+.vscode/
+*.backup
+*.log
+
