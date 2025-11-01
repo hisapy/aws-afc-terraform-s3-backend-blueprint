@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Secure and encrypted S3 backend for Terraform with OIDC role for GitHub Actions
+
+Parameters:
+  Project:
+    Type: String
+    Description: Used in tags and as the prefix for the S3 BucketName (e.g., myproject-tfbackend)
+    AllowedPattern: ^[\w-]+$
+  GitHubRepoPath:
+    Type: String
+    Description: Path of the GitHub repo that will perform Terraform actions via OIDC (e.g., myuser/myrepo)
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+  TerraformS3BackendBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub '${Project}-tfbackend'
+      Tags:
+        - Key: env
+          Value: !Ref Environment
+        - Key: project
+          Value: !Ref Project
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformS3BackendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformS3BackendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowTerraformRoleAccess
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt GitHubActionsRole.Arn
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformS3BackendBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformS3BackendBucket}/*'
+          - Sid: EnforceTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformS3BackendBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformS3BackendBucket}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GitHubActionsRole
+      Tags:
+        - Key: env
+          Value: !Ref Environment
+        - Key: project
+          Value: !Ref Project
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: 'sts.amazonaws.com'
+              StringLike:
+                # Access from any ref/branch of from repo suffixes such as myorg/myproject-frontend
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepoPath}*:*'
+
+      ManagedPolicyArns:
+        # NOTICE: you might want to use a least-privilege role to manage only specific resources
+        - arn:aws:iam::aws:policy/PowerUserAccess
+
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: 'https://token.actions.githubusercontent.com'
+      Tags:
+        - Key: env
+          Value: !Ref Environment
+        - Key: project
+          Value: !Ref Project
+      ClientIdList:
+        - 'sts.amazonaws.com'
+      # Thumbprint for GitHub OIDC provider
+      # See: https://github.blog/changelog/2023-06-27-github-actions-update-on-oidc-integration-with-aws/
+      ThumbprintList:
+        - '6938fd4d98bab03faadb97b34396831e3780aea1'
+        - '1c58a3a8518e8759bf075b76b750d4f2df264fcd'
+
+Outputs:
+  BucketName:
+    Value: !Ref TerraformS3BackendBucket
+  GitHubActionsRoleArn:
+    Value: !GetAtt GitHubActionsRole.Arn
