@@ -14,7 +14,7 @@ This blueprint customizes the account with the following resources:
 - Clone this repo or just copy the [terraform-s3-backend.yml](./terraform-s3-backend.yml) template
 - Follow the steps in [Customize accounts with Account Factory Customization (AFC)](https://docs.aws.amazon.com/controltower/latest/userguide/af-customization-page.html) using this template providing the required input parameters
 
-Now you can use the ARN of the `GithubActionsRole` created by this blueprint to authenticate to AWS via OIDC. For example, using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials), if you store the ARN in `secrets.AWS_ROLE`:
+Now you can use the ARN of the `GitHubActionsRole` created by this blueprint to authenticate to AWS via OIDC. For example, using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials), if you store the ARN in `secrets.AWS_ROLE`:
 
 ```yaml
 - uses: aws-actions/configure-aws-credentials@v5.0.0
