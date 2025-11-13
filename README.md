@@ -32,7 +32,7 @@ Basically, provision/update accounts via the Control Tower UI using the blueprin
 
 - The accounts for the clients' workloads are provisioned under the **Workloads** OU.
 
-- In the UI console, when creating a new product vesion, you can upload the template from your computer; however, in the AWS CLI/API, it is ONLY possible to reference the template from an S3 bucket or from a CloudFront stack, and even though `aws servicecatalog create-provisioning-artifact ...` using a GitHub repo URL creates a new product version, when you try to use it, it fails with the error **_The TemplateURL must be a supported URL_**.
+- In the UI console, when creating a new product version, you can upload the template from your computer; however, in the AWS CLI/API, it is ONLY possible to reference the template from an S3 bucket or from a CloudFront stack, and even though `aws servicecatalog create-provisioning-artifact ...` using a GitHub repo URL creates a new product version, when you try to use it, it fails with the error **_The TemplateURL must be a supported URL_**.
 
 - It is not possible to apply a blueprint from the AFC Hub account to the AFC Hub account; I tried this experiment to bootstrap the resources to automate the creation of a new product version from a new release/version on GitHub. I could've manually created the OIDC Provider, S3 bucket, etc., but didn't because I'm not going to change the template anytime soon.
 
