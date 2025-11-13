@@ -14,7 +14,16 @@ This blueprint customizes the account with the following resources:
 - Clone this repo or just copy the [terraform-s3-backend.yml](./terraform-s3-backend.yml) template
 - Follow the steps in [Customize accounts with Account Factory Customization (AFC)](https://docs.aws.amazon.com/controltower/latest/userguide/af-customization-page.html) using this template providing the required input parameters
 
-After this, take note of the ARN of the `GitHubActionsRole` created by this blueprint because you'll need it as the `role-to-assume` input variable when connecting from GitHub Actions with [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials). This ARN looks something like arn:aws:iam::012312312312:role/GitHubActionsRole, where 012312312312 is the account ID.
+Now you can use the ARN of the `GithubActionsRole` created by this blueprint to authenticate to AWS via OIDC. For example, using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials), if you store the ARN in `secrets.AWS_ROLE`:
+
+```yaml
+- uses: aws-actions/configure-aws-credentials@v5.0.0
+  with:
+    role-to-assume: ${{ secrets.AWS_ROLE }}
+    aws-region: ${{ env.TF_VAR_aws_region }}
+```
+
+This ARN looks something like `arn:aws:iam::012312312312:role/GitHubActionsRole`, where **012312312312** is the ID of the provisioned account.
 
 ## Why this?
 
